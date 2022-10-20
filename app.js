@@ -3,13 +3,16 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
+const log = require('./src/middlewares/log');
+const blacklist = require('./src/middlewares/blacklist');
+
 const app = express();
 
 // middlewares
-require('./src/middlewares/log')(app);
+app.use(log);
 app.use(cors());
 app.use(bodyParser.json());
-require('./src/middlewares/blacklist/blacklist')(app);
+app.use(blacklist);
 
 const PORT = 3001;
 
