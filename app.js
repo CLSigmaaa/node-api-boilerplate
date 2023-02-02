@@ -1,40 +1,32 @@
-// importation des packages et des fichiers
+// Import libraries
 const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
+const fs = require('fs');
+const morgan = require('morgan');
+const jsonErrorHandler = require('./src/middlewares/jsonErrorHandler');
+const checkAuth = require('./src/middlewares/check-authentication');
+require('dotenv').config()
 
+// Const variables
 const app = express();
+const port = process.env.API_PORT;
 
-// middlewares
-require('./src/middlewares/log')(app);
-app.use(cors());
-app.use(bodyParser.json());
-require('./src/middlewares/blacklist/blacklist')(app);
+// Create a write stream (in append mode)
+const accessLogStream = fs.createWriteStream(__dirname + '/src/logs/requests.log', { flags: 'a' });
 
-const PORT = 3001;
+// Middlewares
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(jsonErrorHandler);
+app.use(morgan('combined', { stream: accessLogStream }));
 
-// routes
-app.get('/', (req, res) => res.send("Connecté à l'API"));
+// Routes
+app.get('/', (req, res) => {
+    res.send('Hello World!');
+});
+app.use('/users', require('./src/routes/users'));
+app.use('/api', require('./src/routes/auth'));
 
-// users : 
-require('./src/routes/users/findOneUser')(app);
-require('./src/routes/users/createUser')(app);
-require('./src/routes/users/findAllUsers')(app);
-require('./src/routes/users/updateUser')(app);
-require('./src/routes/users/deleteUser')(app);
-
-// login :
-require('./src/routes/login')(app);
-
-// swagger
-require('./src/utils/swagger-serv')(app);
-
-
-// Gestion d'erreur
-// Erreur 404
-app.use(({res}) => {
-    const message = "Impossible de trouver la ressource demandée ! Vous pouvez essayer une autre URL.";
-    res.status(404).json({message});
-})
-
-app.listen(PORT, () => console.log(`Server running on ${PORT}!`));
+// Start server
+app.listen(port, () => {
+    console.log(`Example app listening at http://localhost:${port}`);
+});
